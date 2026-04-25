@@ -16,6 +16,41 @@ function judgeia_register_settings_provedores() {
 add_action('admin_init', 'judgeia_register_settings_provedores');
 
 add_action('wp_ajax_judgeia_test_provider_connection', 'judgeia_test_provider_connection');
+add_action('wp_ajax_judgeia_save_provider_settings', 'judgeia_save_provider_settings');
+
+function judgeia_save_provider_settings() {
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'Sem permissão para salvar os provedores.'], 403);
+    }
+
+    check_ajax_referer('judgeia_admin_nonce', 'nonce');
+
+    $input = [
+        'active_provider' => sanitize_key(wp_unslash($_POST['active_provider'] ?? 'gemini')),
+        'gemini_api_key' => base64_decode((string)($_POST['gemini_api_key_encoded'] ?? ''), true),
+        'gemini_model' => sanitize_text_field(wp_unslash($_POST['gemini_model'] ?? '')),
+        'openai_api_key' => base64_decode((string)($_POST['openai_api_key_encoded'] ?? ''), true),
+        'openai_model' => sanitize_text_field(wp_unslash($_POST['openai_model'] ?? '')),
+    ];
+
+    if ($input['gemini_api_key'] === false) {
+        $input['gemini_api_key'] = '';
+    }
+
+    if ($input['openai_api_key'] === false) {
+        $input['openai_api_key'] = '';
+    }
+
+    $sanitized = judgeia_sanitize_provedores($input);
+    $updated = update_option('judgeia_settings_provedores', $sanitized, false);
+
+    if ($updated || get_option('judgeia_settings_provedores') === $sanitized) {
+        wp_send_json_success(['message' => 'Configurações de provedores salvas com sucesso.']);
+    }
+
+    wp_send_json_error(['message' => 'Nao foi possivel salvar as configurações de provedores.']);
+}
 
 function judgeia_test_provider_connection() {
 
@@ -136,7 +171,7 @@ function judgeia_render_tab_provedores() {
     $options = is_array($options) ? $options : [];
 
     ?>
-    <form method="post" action="options.php">
+    <form method="post" action="options.php" id="judgeia-provider-settings-form">
         <?php settings_fields('judgeia_settings_group_provedores'); ?>
 
         <table class="form-table">
@@ -204,6 +239,8 @@ function judgeia_render_tab_provedores() {
             </tr>
 
         </table>
+
+        <p class="description" id="judgeia-provider-save-result" style="margin:10px 0 0;"></p>
 
         <?php submit_button(); ?>
     </form>

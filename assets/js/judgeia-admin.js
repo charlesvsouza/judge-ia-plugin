@@ -1,5 +1,52 @@
 jQuery(document).ready(function($){
 
+    const providerForm = $('#judgeia-provider-settings-form');
+
+    if (providerForm.length && typeof judgeiaAdminData !== 'undefined') {
+        providerForm.on('submit', function(e){
+            e.preventDefault();
+
+            const submitButton = providerForm.find('button[type="submit"], input[type="submit"]');
+            const saveResult = $('#judgeia-provider-save-result');
+
+            const activeProvider = providerForm.find('select[name="judgeia_settings_provedores[active_provider]"]').val() || 'gemini';
+            const geminiKey = providerForm.find('input[name="judgeia_settings_provedores[gemini_api_key]"]').val() || '';
+            const geminiModel = providerForm.find('input[name="judgeia_settings_provedores[gemini_model]"]').val() || '';
+            const openaiKey = providerForm.find('input[name="judgeia_settings_provedores[openai_api_key]"]').val() || '';
+            const openaiModel = providerForm.find('input[name="judgeia_settings_provedores[openai_model]"]').val() || '';
+
+            submitButton.prop('disabled', true);
+            saveResult.css('color', '#1d2327').text('Salvando configuracoes...');
+
+            $.post(judgeiaAdminData.ajaxUrl, {
+                action: 'judgeia_save_provider_settings',
+                nonce: judgeiaAdminData.nonce,
+                active_provider: activeProvider,
+                gemini_api_key_encoded: btoa(unescape(encodeURIComponent(geminiKey))),
+                gemini_model: geminiModel,
+                openai_api_key_encoded: btoa(unescape(encodeURIComponent(openaiKey))),
+                openai_model: openaiModel
+            })
+            .done(function(response){
+                if (response && response.success) {
+                    saveResult.css('color', '#1a7f37').text(response.data.message || 'Configuracoes salvas com sucesso.');
+                    return;
+                }
+
+                const message = response && response.data && response.data.message
+                    ? response.data.message
+                    : 'Falha ao salvar as configuracoes.';
+                saveResult.css('color', '#b42318').text(message);
+            })
+            .fail(function(){
+                saveResult.css('color', '#b42318').text('Falha de comunicacao com o servidor WordPress ao salvar as configuracoes.');
+            })
+            .always(function(){
+                submitButton.prop('disabled', false);
+            });
+        });
+    }
+
     $('.judgeia-upload').on('click', function(e){
 
         e.preventDefault();
