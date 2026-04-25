@@ -4,7 +4,7 @@ Tags: ai, chatbot, artificial intelligence, gemini, openai, wordpress chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.10
+Stable tag: 2.1.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,11 @@ Sim. Basta definir o limite como 0.
 
 == Changelog ==
 
+= 2.1.11 =
+* Correcao do salvamento das configuracoes de provedores para evitar erro 500 ao salvar API keys.
+* Sanitizacao defensiva para payloads inesperados no options.php.
+* Registro de settings de provedores atualizado para o formato de argumentos compativel com WordPress atual.
+
 = 2.1.10 =
 * Compatibilidade ampliada do payload Gemini para instruction de sistema: tentativa automatica em system_instruction, systemInstruction e sem campo quando necessario.
 * Correcao da deteccao de erro de campo desconhecido para system_instruction.
@@ -167,6 +172,9 @@ Sim. Basta definir o limite como 0.
 * Indicador de status da API
 
 == Upgrade Notice ==
+
+= 2.1.11 =
+Corrige falha 500 ao salvar chaves de API em Provedores e melhora a robustez do processamento das configuracoes.
 
 = 2.1.10 =
 Corrige erro Gemini "Unknown name system_instruction" e adiciona fallback automatico entre formatos de system instruction.

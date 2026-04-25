@@ -9,7 +9,11 @@ function judgeia_register_settings_provedores() {
     register_setting(
         'judgeia_settings_group_provedores',
         'judgeia_settings_provedores',
-        'judgeia_sanitize_provedores'
+        [
+            'type' => 'array',
+            'sanitize_callback' => 'judgeia_sanitize_provedores',
+            'default' => judgeia_get_default_settings_provedores(),
+        ]
     );
 }
 
@@ -133,6 +137,7 @@ function judgeia_test_provider_connection() {
 function judgeia_render_tab_provedores() {
 
     $options = get_option('judgeia_settings_provedores');
+    $options = is_array($options) ? $options : [];
 
     ?>
     <form method="post" action="options.php">

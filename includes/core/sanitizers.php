@@ -47,21 +47,43 @@ function judgeia_sanitize_geral($input) {
 function judgeia_sanitize_provedores($input) {
 
     $defaults = judgeia_get_default_settings_provedores();
-    $output   = [];
+    $current  = get_option('judgeia_settings_provedores');
+    $current  = is_array($current) ? $current : [];
+    $output   = array_merge($defaults, $current);
+
+    if (!is_array($input)) {
+        add_settings_error(
+            'judgeia_settings_provedores',
+            'judgeia_settings_provedores_invalid_payload',
+            'Falha ao salvar os provedores: formato de dados invalido.',
+            'error'
+        );
+
+        return $output;
+    }
 
     $allowed_providers = ['gemini', 'openai'];
+    $active_provider = sanitize_key(wp_unslash($input['active_provider'] ?? ''));
 
-    $output['active_provider'] = in_array($input['active_provider'] ?? '', $allowed_providers, true)
-        ? $input['active_provider']
+    $output['active_provider'] = in_array($active_provider, $allowed_providers, true)
+        ? $active_provider
         : $defaults['active_provider'];
 
-    $output['gemini_api_key'] = sanitize_text_field($input['gemini_api_key'] ?? '');
-    $output['gemini_model']   = sanitize_text_field($input['gemini_model'] ?? $defaults['gemini_model']);
+    $output['gemini_api_key'] = judgeia_sanitize_settings_scalar($input['gemini_api_key'] ?? '');
+    $output['gemini_model']   = judgeia_sanitize_settings_scalar($input['gemini_model'] ?? $defaults['gemini_model']);
 
-    $output['openai_api_key'] = sanitize_text_field($input['openai_api_key'] ?? '');
-    $output['openai_model']   = sanitize_text_field($input['openai_model'] ?? $defaults['openai_model']);
+    $output['openai_api_key'] = judgeia_sanitize_settings_scalar($input['openai_api_key'] ?? '');
+    $output['openai_model']   = judgeia_sanitize_settings_scalar($input['openai_model'] ?? $defaults['openai_model']);
 
     return $output;
+}
+
+function judgeia_sanitize_settings_scalar($value) {
+    if (is_array($value) || is_object($value)) {
+        return '';
+    }
+
+    return sanitize_text_field(wp_unslash((string)$value));
 }
 
 
