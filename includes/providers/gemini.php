@@ -133,6 +133,9 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         return (
             strpos($message, 'unknown name "systeminstruction"') !== false
             || strpos($message, "unknown name 'systeminstruction'") !== false
+            || strpos($message, 'unknown name "system_instruction"') !== false
+            || strpos($message, "unknown name 'system_instruction'") !== false
+            || (strpos($message, 'system_instruction') !== false && strpos($message, 'cannot find field') !== false)
             || (strpos($message, 'systeminstruction') !== false && strpos($message, 'cannot find field') !== false)
         );
     }
@@ -181,6 +184,13 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         $body_without_system_instruction = $body;
         unset($body_without_system_instruction['system_instruction']);
 
+        $body_with_camel_system_instruction = $body_without_system_instruction;
+        if (!empty($system_prompt)) {
+            $body_with_camel_system_instruction['systemInstruction'] = [
+                'parts' => [['text' => $system_prompt]]
+            ];
+        }
+
         $attempt_models = [$this->normalize_model_name($model)];
 
         // Fallbacks comuns para reduzir falhas por indisponibilidade de modelo/API.
@@ -205,14 +215,11 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
 
             if ($has_system_instruction && $this->is_system_instruction_payload_error($result)) {
                 error_log(sprintf(
-                    'Judge IA (Gemini Payload): campo system_instruction rejeitado para model=%s; repetindo sem system instruction.',
+                    'Judge IA (Gemini Payload): campo system_instruction rejeitado para model=%s; tentando systemInstruction.',
                     $current_model
                 ));
 
-                $body = $body_without_system_instruction;
-                $has_system_instruction = false;
-
-                $retry_result = $this->request_generate_content($api_key, $current_model, $body);
+                $retry_result = $this->request_generate_content($api_key, $current_model, $body_with_camel_system_instruction);
                 if (!empty($retry_result['ok'])) {
                     return [
                         'content' => $retry_result['content'],
@@ -220,8 +227,29 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
                     ];
                 }
 
-                $result = $retry_result;
-                $last_error = $result;
+                if (!$this->is_system_instruction_payload_error($retry_result)) {
+                    $result = $retry_result;
+                    $last_error = $result;
+                } else {
+                    error_log(sprintf(
+                        'Judge IA (Gemini Payload): systemInstruction rejeitado para model=%s; repetindo sem system instruction.',
+                        $current_model
+                    ));
+
+                    $body = $body_without_system_instruction;
+                    $has_system_instruction = false;
+
+                    $retry_result = $this->request_generate_content($api_key, $current_model, $body);
+                    if (!empty($retry_result['ok'])) {
+                        return [
+                            'content' => $retry_result['content'],
+                            'tokens'  => $retry_result['tokens'],
+                        ];
+                    }
+
+                    $result = $retry_result;
+                    $last_error = $result;
+                }
             }
             $last_error = $result;
 
