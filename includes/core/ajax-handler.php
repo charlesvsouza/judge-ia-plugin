@@ -172,6 +172,31 @@ function judgeia_handle_message() {
         $result = judgeia_openai_send($message, $history);
     } else {
         $result = judgeia_gemini_send($message, $history);
+
+        // Fallback automatico: se Gemini falhar por acesso ou modelo/API, tenta OpenAI.
+        if (is_array($result) && isset($result['error'])) {
+            $error_message = strtolower((string)$result['error']);
+            $openai_api_key = trim((string)($settings['openai_api_key'] ?? ''));
+
+            $gemini_denied_access = (
+                strpos($error_message, 'denied access') !== false
+                || strpos($error_message, 'permission denied') !== false
+                || strpos($error_message, 'acesso negado') !== false
+            );
+
+            $gemini_model_unavailable = (
+                strpos($error_message, 'not found for api version') !== false
+                || strpos($error_message, 'not supported for generatecontent') !== false
+                || strpos($error_message, 'call listmodels') !== false
+                || strpos($error_message, 'modelo gemini configurado não está disponível') !== false
+            );
+
+            if (($gemini_denied_access || $gemini_model_unavailable) && $openai_api_key !== '') {
+                error_log('Judge IA: fallback Gemini -> OpenAI acionado automaticamente no chat.');
+                $openai_result = judgeia_openai_send($message, $history);
+                $result = $openai_result;
+            }
+        }
     }
 
     if (is_array($result) && isset($result['error'])) {

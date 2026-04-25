@@ -3,9 +3,15 @@ if (!defined('ABSPATH')) exit;
 
 class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
 
-    private function request_generate_content($api_key, $model, $body) {
+    private function normalize_model_name($model) {
+        $model = trim((string)$model);
+        $model = preg_replace('#^models/#i', '', $model);
+        return $model;
+    }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$api_key}";
+    private function request_generate_content_for_version($api_key, $model, $body, $api_version) {
+
+        $url = "https://generativelanguage.googleapis.com/{$api_version}/models/{$model}:generateContent?key={$api_key}";
 
         $response = wp_remote_post($url, [
             'headers' => ['Content-Type' => 'application/json'],
@@ -33,6 +39,7 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
             return [
                 'ok' => false,
                 'kind' => 'api',
+                'api_version' => $api_version,
                 'status_code' => $status_code,
                 'error_code' => $error_code,
                 'error_status' => $error_status,
@@ -60,6 +67,26 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         ];
     }
 
+    private function request_generate_content($api_key, $model, $body) {
+        $model = $this->normalize_model_name($model);
+
+        // Tenta primeiro v1beta por compatibilidade e, se necessário, tenta v1.
+        $result = $this->request_generate_content_for_version($api_key, $model, $body, 'v1beta');
+        if (!empty($result['ok'])) {
+            return $result;
+        }
+
+        if ($this->is_model_unavailable_error($result)) {
+            $fallback_result = $this->request_generate_content_for_version($api_key, $model, $body, 'v1');
+            if (!empty($fallback_result['ok'])) {
+                return $fallback_result;
+            }
+            return $fallback_result;
+        }
+
+        return $result;
+    }
+
     private function is_access_denied_error($result) {
         if (!is_array($result) || ($result['kind'] ?? '') !== 'api') {
             return false;
@@ -79,6 +106,20 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
             || strpos($message, 'permission denied') !== false
             || strpos($message, 'not allowed') !== false
             || strpos($message, 'insufficient permission') !== false
+        );
+    }
+
+    private function is_model_unavailable_error($result) {
+        if (!is_array($result) || ($result['kind'] ?? '') !== 'api') {
+            return false;
+        }
+
+        $message = strtolower((string)($result['message'] ?? ''));
+
+        return (
+            strpos($message, 'is not found for api version') !== false
+            || strpos($message, 'not supported for generatecontent') !== false
+            || strpos($message, 'model') !== false && strpos($message, 'not found') !== false
         );
     }
 
@@ -121,10 +162,10 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
             ];
         }
 
-        $attempt_models = [$model];
+        $attempt_models = [$this->normalize_model_name($model)];
 
-        // Fallbacks comuns para contas sem acesso a modelos mais novos.
-        foreach (['gemini-1.5-flash', 'gemini-1.5-pro'] as $fallback_model) {
+        // Fallbacks comuns para reduzir falhas por indisponibilidade de modelo/API.
+        foreach (['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'] as $fallback_model) {
             if (!in_array($fallback_model, $attempt_models, true)) {
                 $attempt_models[] = $fallback_model;
             }
@@ -154,6 +195,16 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
                 return ['error' => 'A resposta da API do Gemini não possui o formato esperado.'];
             }
 
+            if ($this->is_model_unavailable_error($result)) {
+                error_log(sprintf(
+                    'Judge IA (Gemini Model Unavailable): model=%s, api=%s, error=%s',
+                    $current_model,
+                    $result['api_version'] ?? 'unknown',
+                    isset($result['raw']) ? wp_json_encode($result['raw']) : ($result['message'] ?? 'unknown')
+                ));
+                continue;
+            }
+
             // So tenta fallback quando o problema e acesso/permissao do projeto/modelo.
             if (!$this->is_access_denied_error($result)) {
                 break;
@@ -169,6 +220,12 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         if ($this->is_access_denied_error($last_error)) {
             return [
                 'error' => 'Gemini bloqueou o projeto/chave atual (acesso negado). Verifique faturamento, região e permissões da chave no Google AI Studio/Cloud ou troque para OpenAI em Provedores.'
+            ];
+        }
+
+        if ($this->is_model_unavailable_error($last_error)) {
+            return [
+                'error' => 'O modelo Gemini configurado não está disponível para sua chave/projeto nesta versão da API. Atualize o modelo em Provedores (ex.: gemini-2.0-flash) ou use OpenAI.'
             ];
         }
 

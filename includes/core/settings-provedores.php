@@ -39,10 +39,11 @@ function judgeia_test_provider_connection() {
 
     if ($provider === 'gemini') {
         if ($model === '') {
-            $model = 'gemini-1.5-flash';
+            $model = 'gemini-2.0-flash';
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$api_key}";
+        $model = preg_replace('#^models/#i', '', trim($model));
+
         $payload = [
             'contents' => [
                 [
@@ -54,23 +55,42 @@ function judgeia_test_provider_connection() {
             ],
         ];
 
-        $response = wp_remote_post($url, [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode($payload),
-            'timeout' => 20,
-        ]);
+        $versions = ['v1beta', 'v1'];
+        $last_error = null;
 
-        if (is_wp_error($response)) {
-            wp_send_json_error(['message' => 'Falha de rede ao conectar no Gemini: ' . $response->get_error_message()]);
+        foreach ($versions as $api_version) {
+            $url = "https://generativelanguage.googleapis.com/{$api_version}/models/{$model}:generateContent?key={$api_key}";
+
+            $response = wp_remote_post($url, [
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => wp_json_encode($payload),
+                'timeout' => 20,
+            ]);
+
+            if (is_wp_error($response)) {
+                wp_send_json_error(['message' => 'Falha de rede ao conectar no Gemini: ' . $response->get_error_message()]);
+            }
+
+            $body = json_decode(wp_remote_retrieve_body($response), true);
+            if (!isset($body['error'])) {
+                wp_send_json_success(['message' => 'Conexão com Gemini validada com sucesso.']);
+            }
+
+            $last_error = $body['error']['message'] ?? 'Erro desconhecido na API do Gemini.';
+
+            $lower_message = strtolower((string)$last_error);
+            $is_model_unavailable = (
+                strpos($lower_message, 'is not found for api version') !== false
+                || strpos($lower_message, 'not supported for generatecontent') !== false
+                || (strpos($lower_message, 'model') !== false && strpos($lower_message, 'not found') !== false)
+            );
+
+            if (!$is_model_unavailable) {
+                break;
+            }
         }
 
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-        if (isset($body['error'])) {
-            $message = $body['error']['message'] ?? 'Erro desconhecido na API do Gemini.';
-            wp_send_json_error(['message' => 'Gemini retornou erro: ' . $message]);
-        }
-
-        wp_send_json_success(['message' => 'Conexão com Gemini validada com sucesso.']);
+        wp_send_json_error(['message' => 'Gemini retornou erro: ' . ($last_error ?: 'Erro desconhecido na API do Gemini.')]);
     }
 
     if ($model === '') {
