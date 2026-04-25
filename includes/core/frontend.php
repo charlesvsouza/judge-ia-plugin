@@ -64,11 +64,19 @@ function judgeia_render_widget() {
                 </div>
             </div>
 
-      <div class="judgeia-header-actions">
-            <button id="judgeia-clear" class="judgeia-btn" title="Limpar conversa">🗑</button>
-            <button id="judgeia-minimize" class="judgeia-btn" title="Minimizar">—</button>
-            <button id="judgeia-toggle-size" class="judgeia-btn desktop-only" title="Expandir">⛶</button>
-            <button id="judgeia-close" class="judgeia-btn danger" title="Fechar">✕</button>
+        <div class="judgeia-header-actions">
+            <button id="judgeia-clear" class="judgeia-btn" title="Limpar conversa">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            </button>
+            <button id="judgeia-minimize" class="judgeia-btn" title="Minimizar">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path></svg>
+            </button>
+            <button id="judgeia-toggle-size" class="judgeia-btn desktop-only" title="Expandir">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
+            </button>
+            <button id="judgeia-close" class="judgeia-btn danger" title="Fechar">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
         </div>
 
@@ -81,7 +89,7 @@ function judgeia_render_widget() {
         <div id="judgeia-survey" class="judgeia-survey judgeia-hidden">
             <div class="judgeia-survey-card">
                 <strong>Como foi sua experiência?</strong>
-                <p>Avalie o atendimento e, se quiser, deixe um comentário.</p>
+                <p>Avalie a qualidade da resposta da IA de 1 a 5 (1 = muito ruim, 5 = excelente).</p>
 
                 <div class="judgeia-survey-rating" role="group" aria-label="Pesquisa de satisfação">
                     <button type="button" class="judgeia-rating-btn" data-rating="1">1</button>
@@ -89,6 +97,11 @@ function judgeia_render_widget() {
                     <button type="button" class="judgeia-rating-btn" data-rating="3">3</button>
                     <button type="button" class="judgeia-rating-btn" data-rating="4">4</button>
                     <button type="button" class="judgeia-rating-btn" data-rating="5">5</button>
+                </div>
+
+                <div class="judgeia-survey-scale" aria-hidden="true">
+                    <span>Muito ruim</span>
+                    <span>Excelente</span>
                 </div>
 
                 <textarea id="judgeia-survey-comment" rows="3" placeholder="Comentário opcional"></textarea>
@@ -103,13 +116,10 @@ function judgeia_render_widget() {
         </div>
 
         <div class="judgeia-input-area">
-            <input type="text" id="judgeia-input" placeholder="Digite sua pergunta...">
+            <textarea id="judgeia-input" rows="1" placeholder="Digite sua pergunta..."></textarea>
 
             <button id="judgeia-send" class="judgeia-send-btn" aria-label="Enviar">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                    <path fill="currentColor"
-                          d="M2 21l21-9L2 3v7l15 2-15 2z"/>
-                </svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
 
@@ -119,7 +129,7 @@ function judgeia_render_widget() {
         <?php if ($button_image): ?>
             <img src="<?php echo esc_url($button_image); ?>" alt="Assistente Jurídico">
         <?php else: ?>
-            💬
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         <?php endif; ?>
 
         <span class="judgeia-tooltip">

@@ -3,7 +3,7 @@
  * Plugin Name: Judge IA Plugin
  * Plugin URI: https://seudominio.com/judge-ia
  * Description: Assistente de Inteligência Artificial para WordPress com suporte a Gemini e OpenAI, controle de limite diário e interface moderna.
- * Version: 2.1.3
+ * Version: 2.1.6
  * Author: Charles Vasconcelos de Souza
  * Author URI: https://seudominio.com
  * Text Domain: judge-ia-plugin
@@ -23,9 +23,14 @@ if (!defined('ABSPATH')) exit;
 |--------------------------------------------------------------------------
 */
 
-define('JUDGEIA_PLUGIN_VERSION', '2.1.3');
+define('JUDGEIA_PLUGIN_VERSION', '2.1.6');
 define('JUDGEIA_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('JUDGEIA_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+// Optional token for private repositories.
+if (!defined('JUDGEIA_GITHUB_TOKEN')) {
+    define('JUDGEIA_GITHUB_TOKEN', '');
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +42,41 @@ function judgeia_safe_require($file) {
     $path = JUDGEIA_PLUGIN_PATH . $file;
     if (file_exists($path)) {
         require_once $path;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| AUTO UPDATER (GitHub)
+|--------------------------------------------------------------------------
+*/
+
+$puc_path = JUDGEIA_PLUGIN_PATH . 'includes/plugin-update-checker/plugin-update-checker.php';
+if (file_exists($puc_path)) {
+    require_once $puc_path;
+}
+
+if (class_exists('YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory')) {
+    $myUpdateChecker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+        'https://github.com/charlesvsouza/judge-ia-plugin/',
+        __FILE__,
+        'judge-ia-plugin'
+    );
+
+    // Keep updates tied to the production branch.
+    $myUpdateChecker->setBranch('main');
+
+    // In this project, version bumps are published on main first.
+    $myUpdateChecker->addFilter('vcs_update_detection_strategies', function ($strategies) {
+        if (isset($strategies['branch'])) {
+            return ['branch' => $strategies['branch']];
+        }
+
+        return $strategies;
+    });
+
+    if (defined('JUDGEIA_GITHUB_TOKEN') && JUDGEIA_GITHUB_TOKEN !== '') {
+        $myUpdateChecker->setAuthentication(JUDGEIA_GITHUB_TOKEN);
     }
 }
 

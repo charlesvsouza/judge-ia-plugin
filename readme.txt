@@ -1,10 +1,10 @@
 === Judge IA Plugin ===
 Contributors: judgeia
 Tags: ai, chatbot, artificial intelligence, gemini, openai, wordpress chat
-Requires at least: 5.8
-Tested up to: 6.5
-Requires PHP: 7.4
-Stable tag: 2.1.3
+Requires at least: 6.0
+Tested up to: 6.9
+Requires PHP: 8.0
+Stable tag: 2.1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,16 @@ Ideal para:
 5. Escolha o modelo desejado
 6. Defina limite diário e tokens
 7. Salve as configurações
+
+== Build do pacote ZIP ==
+
+Para gerar o pacote instalavel no formato correto do WordPress (com pasta raiz unica), execute na raiz do projeto:
+
+powershell -ExecutionPolicy Bypass -File .\build-plugin-zip.ps1
+
+O arquivo sera gerado em:
+
+dist\judge-ia-plugin-x.y.z-install.zip
 
 == Configuration ==
 

@@ -1,0 +1,103 @@
+<?php
+/**
+ * Plugin Name: Judge IA Plugin
+ * Plugin URI: https://seudominio.com/judge-ia
+ * Description: Assistente de Inteligência Artificial para WordPress com suporte a Gemini e OpenAI, controle de limite diário e interface moderna.
+ * Version: 2.1.4
+ * Author: Charles Vasconcelos de Souza
+ * Author URI: https://seudominio.com
+ * Text Domain: judge-ia-plugin
+ * Domain Path: /languages
+ * Requires at least: 6.0
+ * Tested up to: 6.9
+ * Requires PHP: 8.0
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ */
+
+if (!defined('ABSPATH')) exit;
+
+/*
+|--------------------------------------------------------------------------
+| CONSTANTES
+|--------------------------------------------------------------------------
+*/
+
+define('JUDGEIA_PLUGIN_VERSION', '2.1.4');
+define('JUDGEIA_PLUGIN_PATH', plugin_dir_path(__FILE__));
+define('JUDGEIA_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+/*
+|--------------------------------------------------------------------------
+| SAFE REQUIRE
+|--------------------------------------------------------------------------
+*/
+
+function judgeia_safe_require($file) {
+    $path = JUDGEIA_PLUGIN_PATH . $file;
+    if (file_exists($path)) {
+        require_once $path;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| CORE
+|--------------------------------------------------------------------------
+*/
+
+judgeia_safe_require('includes/core/defaults.php');
+judgeia_safe_require('includes/core/sanitizers.php');
+judgeia_safe_require('includes/core/settings-geral.php');
+judgeia_safe_require('includes/core/settings-provedores.php');
+judgeia_safe_require('includes/core/settings-aparencia.php');
+judgeia_safe_require('includes/core/frontend.php');
+judgeia_safe_require('includes/core/ajax-handler.php');
+judgeia_safe_require('includes/core/response-cleaner.php');
+judgeia_safe_require('includes/core/database.php');
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN
+|--------------------------------------------------------------------------
+*/
+
+judgeia_safe_require('includes/admin/admin-page.php');
+
+/*
+|--------------------------------------------------------------------------
+| PROVIDERS
+|--------------------------------------------------------------------------
+*/
+
+judgeia_safe_require('includes/providers/provider-interface.php');
+judgeia_safe_require('includes/providers/gemini.php');
+judgeia_safe_require('includes/providers/openai.php');
+
+/*
+|--------------------------------------------------------------------------
+| ATIVAÇÃO / ATUALIZAÇÃO
+|--------------------------------------------------------------------------
+*/
+
+register_activation_hook(__FILE__, 'judgeia_activate_plugin');
+
+function judgeia_activate_plugin() {
+    judgeia_install_or_update_database();
+    judgeia_initialize_defaults();
+    update_option('judgeia_plugin_db_version', JUDGEIA_PLUGIN_VERSION);
+}
+
+function judgeia_maybe_upgrade_plugin() {
+    $installed_version = get_option('judgeia_plugin_db_version');
+
+    if ($installed_version === JUDGEIA_PLUGIN_VERSION) {
+        return;
+    }
+
+    judgeia_install_or_update_database();
+    judgeia_initialize_defaults();
+    update_option('judgeia_plugin_db_version', JUDGEIA_PLUGIN_VERSION);
+}
+
+add_action('plugins_loaded', 'judgeia_maybe_upgrade_plugin');

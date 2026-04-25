@@ -174,8 +174,12 @@ function judgeia_handle_message() {
         $result = judgeia_gemini_send($message, $history);
     }
 
+    if (is_array($result) && isset($result['error'])) {
+        wp_send_json_error(['message' => $result['error']]);
+    }
+
     if (!$result || empty($result['content'])) {
-        wp_send_json_error(['message' => 'Erro ao comunicar com a API.']);
+        wp_send_json_error(['message' => 'Erro ao comunicar com a API. Verifique os logs de erro do WordPress.']);
     }
 
     $response = $result['content'];

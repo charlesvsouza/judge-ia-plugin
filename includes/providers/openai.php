@@ -51,12 +51,27 @@ class JudgeIA_OpenAI implements JudgeIA_Provider_Interface {
             'timeout' => 30
         ]);
 
-        if (is_wp_error($response)) return false;
+        if (is_wp_error($response)) {
+            error_log('Judge IA (OpenAI WP Error): ' . $response->get_error_message());
+            return ['error' => 'Falha de conexão com a API da OpenAI.'];
+        }
 
-        $data = json_decode(wp_remote_retrieve_body($response), true);
+        $body_response = wp_remote_retrieve_body($response);
+        $data = json_decode($body_response, true);
+
+        if (isset($data['error'])) {
+            $error_message = $data['error']['message'] ?? 'Erro desconhecido na API da OpenAI.';
+            error_log('Judge IA (OpenAI API Error): ' . print_r($data['error'], true));
+            return ['error' => 'Erro da API (OpenAI): ' . $error_message];
+        }
 
         $text = $data['choices'][0]['message']['content'] ?? false;
         $tokens = $data['usage']['total_tokens'] ?? 0;
+
+        if ($text === false) {
+             error_log('Judge IA (OpenAI Unexpected Response): ' . $body_response);
+             return ['error' => 'A resposta da API da OpenAI não possui o formato esperado.'];
+        }
 
         return [
             'content' => $text,

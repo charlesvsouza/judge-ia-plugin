@@ -4,6 +4,8 @@ const STORAGE_KEY = "judgeia_chat_history_v1";
 
 const chat = document.getElementById("judgeia-chat");
 const button = document.getElementById("judgeia-button");
+const widget = document.querySelector(".judgeia-widget");
+const header = chat ? chat.querySelector(".judgeia-header") : null;
 const closeBtn = document.getElementById("judgeia-close");
 const minimizeBtn = document.getElementById("judgeia-minimize");
 const toggleSizeBtn = document.getElementById("judgeia-toggle-size");
@@ -18,11 +20,14 @@ const surveySendBtn = document.getElementById("judgeia-survey-send");
 const surveySkipBtn = document.getElementById("judgeia-survey-skip");
 const surveyStatus = document.getElementById("judgeia-survey-status");
 const ratingButtons = Array.from(document.querySelectorAll(".judgeia-rating-btn"));
+const WIDGET_POS_KEY = "judgeia_widget_position_v1";
 
 let surveyPending = false;
 let surveyDismissed = false;
 let selectedRating = 0;
 let pendingCloseAction = null;
+let wasDragged = false;
+let dragState = null;
 
 if(!chat || !button) return;
 
@@ -68,9 +73,18 @@ function doCloseChat(){
     stopSpeech();
 }
 
-button.addEventListener("click", openChat);
+button.addEventListener("click", function(){
+    if(wasDragged){
+        wasDragged = false;
+        return;
+    }
+
+    openChat();
+});
 if(closeBtn) closeBtn.addEventListener("click", closeChat);
 if(minimizeBtn) minimizeBtn.addEventListener("click", closeChat);
+
+initWidgetDrag();
 
 /* ================================
    FULLSCREEN
@@ -79,7 +93,10 @@ if(minimizeBtn) minimizeBtn.addEventListener("click", closeChat);
 if(toggleSizeBtn){
     toggleSizeBtn.addEventListener("click", function(){
         chat.classList.toggle("judgeia-fullscreen");
-        toggleSizeBtn.innerText = chat.classList.contains("judgeia-fullscreen") ? "🗗" : "⛶";
+        const isFull = chat.classList.contains("judgeia-fullscreen");
+        toggleSizeBtn.innerHTML = isFull 
+            ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>' 
+            : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>';
     });
 }
 
@@ -90,9 +107,18 @@ if(toggleSizeBtn){
 if(sendBtn) sendBtn.addEventListener("click", sendMessage);
 
 if(input){
-    input.addEventListener("keypress", function(e){
-        if(e.key === "Enter"){
+    input.addEventListener("keydown", function(e){
+        if(e.key === "Enter" && !e.shiftKey){
+            e.preventDefault();
             sendMessage();
+        }
+    });
+
+    input.addEventListener("input", function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight <= 120 ? this.scrollHeight : 120) + 'px';
+        if (this.value === "") {
+            this.style.height = 'auto';
         }
     });
 }
@@ -156,6 +182,7 @@ function sendMessage(){
 
     appendUser(message);
     input.value="";
+    input.style.height = 'auto';
     loader.classList.remove("judgeia-hidden");
 
     if(typeof judgeia_ajax === "undefined") return;
@@ -173,10 +200,17 @@ function sendMessage(){
             surveyPending = true;
             surveyDismissed = false;
             saveHistory();
+            return;
         }
+
+        const errorMessage = data?.data?.message || "Nao foi possivel obter resposta agora.";
+        appendError(errorMessage);
+        saveHistory();
     })
     .catch(()=>{
         loader.classList.add("judgeia-hidden");
+        appendError("Falha de conexao. Tente novamente em instantes.");
+        saveHistory();
     });
 }
 
@@ -197,7 +231,7 @@ function appendAI(text){
 
     const speakBtn = document.createElement("button");
     speakBtn.className = "judgeia-audio-btn";
-    speakBtn.innerHTML = "🗣️";
+    speakBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
     speakBtn.title = "Ouvir resposta";
 
     speakBtn.addEventListener("click", function(){
@@ -209,6 +243,14 @@ function appendAI(text){
     });
 
     div.appendChild(speakBtn);
+    messages.appendChild(div);
+    scrollToBottom();
+}
+
+function appendError(text){
+    const div = document.createElement("div");
+    div.className = "judgeia-message judgeia-ai judgeia-error";
+    div.innerText = text;
     messages.appendChild(div);
     scrollToBottom();
 }
@@ -334,14 +376,14 @@ function speak(text, buttonRef){
 
     currentUtterance.onstart = () => {
         if(buttonRef){
-            buttonRef.innerHTML = "⏹";
+            buttonRef.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>';
             buttonRef.title = "Parar leitura";
         }
     };
 
     currentUtterance.onend = () => {
         if(buttonRef){
-            buttonRef.innerHTML = "🗣️";
+            buttonRef.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
             buttonRef.title = "Ouvir resposta";
         }
     };
@@ -378,6 +420,140 @@ function formatResponse(text){
 
 function scrollToBottom(){
     messages.scrollTop = messages.scrollHeight;
+}
+
+function initWidgetDrag(){
+    if(!widget || window.matchMedia("(max-width: 768px)").matches){
+        return;
+    }
+
+    restoreWidgetPosition();
+
+    if(button){
+        button.addEventListener("mousedown", beginDrag);
+    }
+
+    if(header){
+        header.style.cursor = "grab";
+        header.addEventListener("mousedown", beginDrag);
+    }
+
+    document.addEventListener("mousemove", onDrag);
+    document.addEventListener("mouseup", endDrag);
+}
+
+function beginDrag(event){
+    if(event.button !== 0 || !widget){
+        return;
+    }
+
+    dragState = {
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false,
+        offsetX: event.clientX - widget.getBoundingClientRect().left,
+        offsetY: event.clientY - widget.getBoundingClientRect().top
+    };
+
+    if(header){
+        header.style.cursor = "grabbing";
+    }
+
+    event.preventDefault();
+}
+
+function onDrag(event){
+    if(!dragState || !widget){
+        return;
+    }
+
+    const deltaX = Math.abs(event.clientX - dragState.startX);
+    const deltaY = Math.abs(event.clientY - dragState.startY);
+    if(!dragState.moved && (deltaX > 3 || deltaY > 3)){
+        dragState.moved = true;
+        wasDragged = true;
+    }
+
+    if(!dragState.moved){
+        return;
+    }
+
+    const maxLeft = Math.max(0, window.innerWidth - widget.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - widget.offsetHeight);
+
+    const nextLeft = clamp(event.clientX - dragState.offsetX, 0, maxLeft);
+    const nextTop = clamp(event.clientY - dragState.offsetY, 0, maxTop);
+
+    widget.style.left = `${nextLeft}px`;
+    widget.style.top = `${nextTop}px`;
+    widget.style.right = "auto";
+    widget.style.bottom = "auto";
+}
+
+function endDrag(){
+    if(!dragState){
+        return;
+    }
+
+    if(dragState.moved && widget){
+        persistWidgetPosition();
+        window.setTimeout(() => {
+            wasDragged = false;
+        }, 120);
+    }
+
+    if(header){
+        header.style.cursor = "grab";
+    }
+
+    dragState = null;
+}
+
+function clamp(value, min, max){
+    return Math.min(Math.max(value, min), max);
+}
+
+function persistWidgetPosition(){
+    if(!widget){
+        return;
+    }
+
+    const left = parseInt(widget.style.left || "", 10);
+    const top = parseInt(widget.style.top || "", 10);
+
+    if(Number.isNaN(left) || Number.isNaN(top)){
+        return;
+    }
+
+    localStorage.setItem(WIDGET_POS_KEY, JSON.stringify({ left, top }));
+}
+
+function restoreWidgetPosition(){
+    if(!widget){
+        return;
+    }
+
+    const raw = localStorage.getItem(WIDGET_POS_KEY);
+    if(!raw){
+        return;
+    }
+
+    try {
+        const saved = JSON.parse(raw);
+        if(typeof saved.left !== "number" || typeof saved.top !== "number"){
+            return;
+        }
+
+        const maxLeft = Math.max(0, window.innerWidth - widget.offsetWidth);
+        const maxTop = Math.max(0, window.innerHeight - widget.offsetHeight);
+
+        widget.style.left = `${clamp(saved.left, 0, maxLeft)}px`;
+        widget.style.top = `${clamp(saved.top, 0, maxTop)}px`;
+        widget.style.right = "auto";
+        widget.style.bottom = "auto";
+    } catch (_error) {
+        localStorage.removeItem(WIDGET_POS_KEY);
+    }
 }
 
 });

@@ -31,4 +31,59 @@ jQuery(document).ready(function($){
 
     });
 
+    $('#judgeia-test-connection').on('click', function(){
+
+        if (typeof judgeiaAdminData === 'undefined') {
+            return;
+        }
+
+        const button = $(this);
+        const result = $('#judgeia-test-connection-result');
+
+        const provider = $('select[name="judgeia_settings_provedores[active_provider]"]').val() || 'gemini';
+        const geminiKey = $('input[name="judgeia_settings_provedores[gemini_api_key]"]').val() || '';
+        const geminiModel = $('input[name="judgeia_settings_provedores[gemini_model]"]').val() || '';
+        const openaiKey = $('input[name="judgeia_settings_provedores[openai_api_key]"]').val() || '';
+        const openaiModel = $('input[name="judgeia_settings_provedores[openai_model]"]').val() || '';
+
+        let apiKey = '';
+        let model = '';
+
+        if (provider === 'openai') {
+            apiKey = openaiKey;
+            model = openaiModel;
+        } else {
+            apiKey = geminiKey;
+            model = geminiModel;
+        }
+
+        button.prop('disabled', true).text('Testando...');
+        result.css('color', '#1d2327').text('Executando teste de conexão...');
+
+        $.post(judgeiaAdminData.ajaxUrl, {
+            action: 'judgeia_test_provider_connection',
+            nonce: judgeiaAdminData.nonce,
+            provider: provider,
+            api_key: apiKey,
+            model: model
+        })
+        .done(function(response){
+            if (response && response.success) {
+                result.css('color', '#1a7f37').text(response.data.message || 'Conexão validada com sucesso.');
+                return;
+            }
+
+            const message = response && response.data && response.data.message
+                ? response.data.message
+                : 'Falha ao validar a conexão.';
+            result.css('color', '#b42318').text(message);
+        })
+        .fail(function(){
+            result.css('color', '#b42318').text('Falha de comunicação com o servidor WordPress.');
+        })
+        .always(function(){
+            button.prop('disabled', false).text('Testar conexão da API');
+        });
+    });
+
 });

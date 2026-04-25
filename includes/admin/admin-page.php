@@ -42,6 +42,11 @@ function judgeia_enqueue_admin_scripts($hook) {
         JUDGEIA_PLUGIN_VERSION,
         true
     );
+
+    wp_localize_script('judgeia-admin-js', 'judgeiaAdminData', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('judgeia_admin_nonce'),
+    ));
 }
 add_action('admin_enqueue_scripts', 'judgeia_enqueue_admin_scripts');
 
