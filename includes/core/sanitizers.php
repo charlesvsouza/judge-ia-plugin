@@ -46,6 +46,31 @@ function judgeia_sanitize_geral($input) {
 */
 function judgeia_sanitize_provedores($input) {
 
+    try {
+        return judgeia_sanitize_provedores_internal($input);
+    } catch (Throwable $exception) {
+        error_log('Judge IA (Save Providers Fatal): ' . $exception->getMessage());
+
+        if (function_exists('add_settings_error')) {
+            add_settings_error(
+                'judgeia_settings_provedores',
+                'judgeia_settings_provedores_exception',
+                'Falha interna ao salvar os provedores. Os dados anteriores foram mantidos.',
+                'error'
+            );
+        }
+
+        $current = get_option('judgeia_settings_provedores');
+        if (is_array($current)) {
+            return array_merge(judgeia_get_default_settings_provedores(), $current);
+        }
+
+        return judgeia_get_default_settings_provedores();
+    }
+}
+
+function judgeia_sanitize_provedores_internal($input) {
+
     $defaults = judgeia_get_default_settings_provedores();
     $current  = get_option('judgeia_settings_provedores');
     $current  = is_array($current) ? $current : [];
