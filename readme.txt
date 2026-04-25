@@ -4,7 +4,7 @@ Tags: ai, chatbot, artificial intelligence, gemini, openai, wordpress chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.8
+Stable tag: 2.1.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,10 @@ Sim. Basta definir o limite como 0.
 
 == Changelog ==
 
+= 2.1.9 =
+* Correcao do payload do Gemini para usar system_instruction (formato aceito pela API).
+* Retry automatico sem instrucao de sistema quando a API retornar erro de campo desconhecido para system instruction.
+
 = 2.1.8 =
 * Ajuste no auto-updater do GitHub para evitar erro de download "Unauthorized" em repositorio publico.
 * Autenticacao com token passa a ser usada apenas quando o repositorio for privado (via constante JUDGEIA_GITHUB_REPO_PRIVATE).
@@ -159,6 +163,9 @@ Sim. Basta definir o limite como 0.
 * Indicador de status da API
 
 == Upgrade Notice ==
+
+= 2.1.9 =
+Corrige erro da API Gemini "Unknown name systemInstruction" e melhora compatibilidade do payload entre versoes da API.
 
 = 2.1.8 =
 Corrige falha de download "Unauthorized" no processo de atualizacao automatica via GitHub em repositorio publico.

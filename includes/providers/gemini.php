@@ -123,6 +123,20 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         );
     }
 
+    private function is_system_instruction_payload_error($result) {
+        if (!is_array($result) || ($result['kind'] ?? '') !== 'api') {
+            return false;
+        }
+
+        $message = strtolower((string)($result['message'] ?? ''));
+
+        return (
+            strpos($message, 'unknown name "systeminstruction"') !== false
+            || strpos($message, "unknown name 'systeminstruction'") !== false
+            || (strpos($message, 'systeminstruction') !== false && strpos($message, 'cannot find field') !== false)
+        );
+    }
+
     public function send($message, $history = []) {
 
         $settings = get_option('judgeia_settings_provedores');
@@ -157,10 +171,15 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         ];
 
         if (!empty($system_prompt)) {
-            $body["systemInstruction"] = [
+            // Formato aceito pela API Gemini (REST): system_instruction (snake_case).
+            $body["system_instruction"] = [
                 "parts" => [["text" => $system_prompt]]
             ];
         }
+
+        $has_system_instruction = isset($body['system_instruction']);
+        $body_without_system_instruction = $body;
+        unset($body_without_system_instruction['system_instruction']);
 
         $attempt_models = [$this->normalize_model_name($model)];
 
@@ -183,6 +202,27 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
                 ];
             }
 
+
+            if ($has_system_instruction && $this->is_system_instruction_payload_error($result)) {
+                error_log(sprintf(
+                    'Judge IA (Gemini Payload): campo system_instruction rejeitado para model=%s; repetindo sem system instruction.',
+                    $current_model
+                ));
+
+                $body = $body_without_system_instruction;
+                $has_system_instruction = false;
+
+                $retry_result = $this->request_generate_content($api_key, $current_model, $body);
+                if (!empty($retry_result['ok'])) {
+                    return [
+                        'content' => $retry_result['content'],
+                        'tokens'  => $retry_result['tokens'],
+                    ];
+                }
+
+                $result = $retry_result;
+                $last_error = $result;
+            }
             $last_error = $result;
 
             if (($result['kind'] ?? '') === 'network') {
