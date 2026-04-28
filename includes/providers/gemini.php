@@ -140,6 +140,27 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         );
     }
 
+    private function is_rate_limited_error($result) {
+        if (!is_array($result) || ($result['kind'] ?? '') !== 'api') {
+            return false;
+        }
+
+        $status_code  = intval($result['status_code'] ?? 0);
+        $error_code   = intval($result['error_code'] ?? 0);
+        $error_status = strtolower((string)($result['error_status'] ?? ''));
+        $message      = strtolower((string)($result['message'] ?? ''));
+
+        if ($status_code === 429 || $error_code === 429 || $error_status === 'resource_exhausted') {
+            return true;
+        }
+
+        return strpos($message, 'resource exhausted') !== false
+            || strpos($message, 'exhausted') !== false
+            || strpos($message, 'quota exceeded') !== false
+            || strpos($message, 'rate limit') !== false
+            || strpos($message, '429') !== false;
+    }
+
     public function send($message, $history = []) {
 
         $settings = get_option('judgeia_settings_provedores');
@@ -273,6 +294,15 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
                 continue;
             }
 
+            if ($this->is_rate_limited_error($result)) {
+                error_log(sprintf(
+                    'Judge IA (Gemini Rate Limit): model=%s, error=%s',
+                    $current_model,
+                    isset($result['raw']) ? wp_json_encode($result['raw']) : ($result['message'] ?? 'unknown')
+                ));
+                continue;
+            }
+
             // So tenta fallback quando o problema e acesso/permissao do projeto/modelo.
             if (!$this->is_access_denied_error($result)) {
                 break;
@@ -294,6 +324,12 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         if ($this->is_model_unavailable_error($last_error)) {
             return [
                 'error' => 'O modelo Gemini configurado não está disponível para sua chave/projeto nesta versão da API. Atualize o modelo em Provedores (ex.: gemini-2.0-flash) ou use OpenAI.'
+            ];
+        }
+
+        if ($this->is_rate_limited_error($last_error)) {
+            return [
+                'error' => 'gemini_rate_limited: A cota da API do Gemini foi esgotada (limite de requisições atingido). Aguarde alguns minutos e tente novamente, ou configure o provedor OpenAI como alternativa.'
             ];
         }
 

@@ -173,7 +173,7 @@ function judgeia_handle_message() {
     } else {
         $result = judgeia_gemini_send($message, $history);
 
-        // Fallback automatico: se Gemini falhar por acesso ou modelo/API, tenta OpenAI.
+        // Fallback automatico: se Gemini falhar por acesso, modelo/API ou cota, tenta OpenAI.
         if (is_array($result) && isset($result['error'])) {
             $error_message = strtolower((string)$result['error']);
             $openai_api_key = trim((string)($settings['openai_api_key'] ?? ''));
@@ -191,7 +191,9 @@ function judgeia_handle_message() {
                 || strpos($error_message, 'modelo gemini configurado não está disponível') !== false
             );
 
-            if (($gemini_denied_access || $gemini_model_unavailable) && $openai_api_key !== '') {
+            $gemini_rate_limited = strpos($error_message, 'gemini_rate_limited:') !== false;
+
+            if (($gemini_denied_access || $gemini_model_unavailable || $gemini_rate_limited) && $openai_api_key !== '') {
                 error_log('Judge IA: fallback Gemini -> OpenAI acionado automaticamente no chat.');
                 $openai_result = judgeia_openai_send($message, $history);
                 $result = $openai_result;
@@ -200,7 +202,8 @@ function judgeia_handle_message() {
     }
 
     if (is_array($result) && isset($result['error'])) {
-        wp_send_json_error(['message' => $result['error']]);
+        $display_error = preg_replace('/^gemini_rate_limited:\s*/i', '', (string)$result['error']);
+        wp_send_json_error(['message' => $display_error]);
     }
 
     if (!$result || empty($result['content'])) {
