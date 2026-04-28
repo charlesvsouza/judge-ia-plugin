@@ -417,20 +417,20 @@ function stopSpeech(){
 ================================ */
 
 function formatResponse(text){
-
     if(!text) return "";
 
     let formatted = text.trim();
 
-    formatted = formatted.replace(/(\.\s*)(\d+\.\s)/g, "$1\n\n$2");
+    // Preservar quebras de linha duplas/triplas antes de outras formatações
+    formatted = formatted.replace(/\n\n\n+/g, '<br><br><br>');
+    formatted = formatted.replace(/\n\n/g, '<br><br>');
+    formatted = formatted.replace(/\n/g, '<br>');
 
-    formatted = formatted.replace(/\n\n+/g, "</p><p>");
-    formatted = formatted.replace(/\n/g, "<br>");
-
-    formatted = formatted.replace(/(\d+\.\s)/g, "<strong>$1</strong>");
+    // Negrito para títulos numerados e Markdown
+    formatted = formatted.replace(/(\d+\.\s.*?:)/g, "<strong>$1</strong>");
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
-    return "<p>" + formatted + "</p>";
+    return "<div>" + formatted + "</div>";
 }
 
 function scrollToBottom(){
