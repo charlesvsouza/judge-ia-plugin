@@ -284,6 +284,27 @@ function clearConversation(){
     closeSurvey();
 }
 
+// Lógica da Pesquisa Multiblocos
+const surveyQuestions = {};
+
+function initSurvey() {
+    const questions = document.querySelectorAll(".judgeia-survey-question");
+    questions.forEach(q => {
+        const id = q.dataset.question;
+        surveyQuestions[id] = 0;
+        const stars = q.querySelectorAll(".judgeia-stars button");
+        stars.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const val = parseInt(btn.dataset.val);
+                surveyQuestions[id] = val;
+                stars.forEach(b => b.classList.toggle("is-active", parseInt(b.dataset.val) <= val));
+            });
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initSurvey);
+
 if(surveySkipBtn){
     surveySkipBtn.addEventListener("click", function(){
         surveyDismissed = true;
@@ -294,18 +315,19 @@ if(surveySkipBtn){
 
 if(surveySendBtn){
     surveySendBtn.addEventListener("click", function(){
-        if(selectedRating < 1){
-            surveyStatus.textContent = "Selecione uma nota de 1 a 5.";
-            return;
-        }
-
+        
         surveyStatus.textContent = "Enviando...";
         surveySendBtn.disabled = true;
 
         const params = new URLSearchParams();
         params.set("action", "judgeia_send_feedback");
         params.set("nonce", judgeia_ajax.nonce);
-        params.set("rating", String(selectedRating));
+        
+        // Coletar respostas das perguntas
+        for (const [key, value] of Object.entries(surveyQuestions)) {
+            params.set(key, String(value));
+        }
+
         params.set("comment", surveyComment ? surveyComment.value.trim() : "");
         params.set("transcript", buildTranscript());
         params.set("page_url", window.location.href);
@@ -324,7 +346,7 @@ if(surveySendBtn){
                 setTimeout(() => {
                     closeSurvey();
                     finalizePendingAction();
-                }, 700);
+                }, 1000);
                 return;
             }
 
@@ -338,13 +360,6 @@ if(surveySendBtn){
         });
     });
 }
-
-ratingButtons.forEach((buttonRef) => {
-    buttonRef.addEventListener("click", function(){
-        setSelectedRating(Number(buttonRef.dataset.rating));
-        if(surveyStatus) surveyStatus.textContent = "";
-    });
-});
 
 /* ================================
    SISTEMA DE VOZ ESTÁVEL

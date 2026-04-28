@@ -88,23 +88,110 @@ function judgeia_render_widget() {
 
         <div id="judgeia-survey" class="judgeia-survey judgeia-hidden">
             <div class="judgeia-survey-card">
-                <strong>Como foi sua experiência?</strong>
-                <p>Avalie a qualidade da resposta da IA de 1 a 5 (1 = muito ruim, 5 = excelente).</p>
-
-                <div class="judgeia-survey-rating" role="group" aria-label="Pesquisa de satisfação">
-                    <button type="button" class="judgeia-rating-btn" data-rating="1">1</button>
-                    <button type="button" class="judgeia-rating-btn" data-rating="2">2</button>
-                    <button type="button" class="judgeia-rating-btn" data-rating="3">3</button>
-                    <button type="button" class="judgeia-rating-btn" data-rating="4">4</button>
-                    <button type="button" class="judgeia-rating-btn" data-rating="5">5</button>
+                <div class="judgeia-survey-header">
+                    <strong>Pesquisa de Satisfação</strong>
+                    <p>Sua avaliação nos ajuda a cumprir a Resolução 125 do CNJ.</p>
                 </div>
 
-                <div class="judgeia-survey-scale" aria-hidden="true">
-                    <span>Muito ruim</span>
-                    <span>Excelente</span>
-                </div>
+                <div class="judgeia-survey-scroll">
+                    <!-- Bloco 1 -->
+                    <div class="judgeia-survey-group">
+                        <span class="judgeia-survey-group-title">Bloco 1: Atendimento</span>
+                        
+                        <div class="judgeia-survey-question" data-question="clarity">
+                            <label>Clareza das informações:</label>
+                            <div class="judgeia-stars">
+                                <button type="button" data-val="1">1</button>
+                                <button type="button" data-val="2">2</button>
+                                <button type="button" data-val="3">3</button>
+                                <button type="button" data-val="4">4</button>
+                                <button type="button" data-val="5">5</button>
+                            </div>
+                        </div>
 
-                <textarea id="judgeia-survey-comment" rows="3" placeholder="Comentário opcional"></textarea>
+                        <div class="judgeia-survey-question" data-question="ease_of_use">
+                            <label>Facilidade de uso da interface:</label>
+                            <div class="judgeia-stars">
+                                <button type="button" data-val="1">1</button>
+                                <button type="button" data-val="2">2</button>
+                                <button type="button" data-val="3">3</button>
+                                <button type="button" data-val="4">4</button>
+                                <button type="button" data-val="5">5</button>
+                            </div>
+                        </div>
+
+                        <div class="judgeia-survey-question" data-question="agility">
+                            <label>Agilidade do atendimento:</label>
+                            <div class="judgeia-stars">
+                                <button type="button" data-val="1">1</button>
+                                <button type="button" data-val="2">2</button>
+                                <button type="button" data-val="3">3</button>
+                                <button type="button" data-val="4">4</button>
+                                <button type="button" data-val="5">5</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloco 2 -->
+                    <div class="judgeia-survey-group">
+                        <span class="judgeia-survey-group-title">Bloco 2: Qualidade</span>
+                        
+                        <div class="judgeia-survey-question" data-question="utility">
+                            <label>Utilidade da orientação recebida:</label>
+                            <div class="judgeia-stars">
+                                <button type="button" data-val="1">1</button>
+                                <button type="button" data-val="2">2</button>
+                                <button type="button" data-val="3">3</button>
+                                <button type="button" data-val="4">4</button>
+                                <button type="button" data-val="5">5</button>
+                            </div>
+                        </div>
+
+                        <div class="judgeia-survey-question" data-question="trust">
+                            <label>Confiança no serviço do CEJUSC:</label>
+                            <div class="judgeia-stars">
+                                <button type="button" data-val="1">1</button>
+                                <button type="button" data-val="2">2</button>
+                                <button type="button" data-val="3">3</button>
+                                <button type="button" data-val="4">4</button>
+                                <button type="button" data-val="5">5</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloco 3 -->
+                    <div class="judgeia-survey-group">
+                        <span class="judgeia-survey-group-title">Bloco 3: Experiência Geral</span>
+                        
+                        <div class="judgeia-survey-question" data-question="satisfaction">
+                            <label>Satisfação global:</label>
+                            <div class="judgeia-stars">
+                                <button type="button" data-val="1">1</button>
+                                <button type="button" data-val="2">2</button>
+                                <button type="button" data-val="3">3</button>
+                                <button type="button" data-val="4">4</button>
+                                <button type="button" data-val="5">5</button>
+                            </div>
+                        </div>
+
+                        <div class="judgeia-survey-question" data-question="nps">
+                            <label>Recomendaria o serviço? (NPS):</label>
+                            <div class="judgeia-stars">
+                                <button type="button" data-val="1">1</button>
+                                <button type="button" data-val="2">2</button>
+                                <button type="button" data-val="3">3</button>
+                                <button type="button" data-val="4">4</button>
+                                <button type="button" data-val="5">5</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloco 4 -->
+                    <div class="judgeia-survey-group">
+                        <span class="judgeia-survey-group-title">Bloco 4: Campo Aberto</span>
+                        <textarea id="judgeia-survey-comment" rows="3" placeholder="Sugestões ou comentários..."></textarea>
+                    </div>
+                </div>
 
                 <div class="judgeia-survey-actions">
                     <button type="button" id="judgeia-survey-skip" class="judgeia-survey-secondary">Pular</button>
