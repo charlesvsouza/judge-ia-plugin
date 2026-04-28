@@ -242,14 +242,12 @@ function judgeia_handle_feedback() {
 
     check_ajax_referer('judgeia_nonce', 'nonce');
 
-    // Novos campos da pesquisa (Likert 1-5)
+    // Campos da pesquisa (5 perguntas Likert 1-5)
     $clarity      = isset($_POST['clarity']) ? intval($_POST['clarity']) : 0;
     $ease_of_use  = isset($_POST['ease_of_use']) ? intval($_POST['ease_of_use']) : 0;
-    $agility      = isset($_POST['agility']) ? intval($_POST['agility']) : 0;
     $utility      = isset($_POST['utility']) ? intval($_POST['utility']) : 0;
     $trust        = isset($_POST['trust']) ? intval($_POST['trust']) : 0;
     $satisfaction = isset($_POST['satisfaction']) ? intval($_POST['satisfaction']) : 0;
-    $nps          = isset($_POST['nps']) ? intval($_POST['nps']) : 0;
 
     $comment    = isset($_POST['comment']) ? sanitize_textarea_field(wp_unslash($_POST['comment'])) : '';
     $transcript = isset($_POST['transcript']) ? sanitize_textarea_field(wp_unslash($_POST['transcript'])) : '';
@@ -277,25 +275,18 @@ function judgeia_handle_feedback() {
     $subject = sprintf('[%s] Pesquisa de Satisfação Detalhada - Judge IA', $site_name);
 
     $body = implode("\n", [
-        'Nova avaliação detalhada recebida do chat Judge IA.',
+        'Nova avaliação recebida do chat Judge IA.',
         '',
-        '--- Bloco 1: Atendimento ---',
-        'Clareza: ' . ($clarity ?: 'N/A') . '/5',
-        'Facilidade: ' . ($ease_of_use ?: 'N/A') . '/5',
-        'Agilidade: ' . ($agility ?: 'N/A') . '/5',
-        '',
-        '--- Bloco 2: Qualidade ---',
-        'Utilidade: ' . ($utility ?: 'N/A') . '/5',
-        'Confiança no CEJUSC: ' . ($trust ?: 'N/A') . '/5',
-        '',
-        '--- Bloco 3: Experiência Geral ---',
-        'Satisfação Global: ' . ($satisfaction ?: 'N/A') . '/5',
-        'Recomendação (NPS): ' . ($nps ?: 'N/A') . '/5',
+        '1. Clareza das informações: ' . ($clarity ?: 'N/A') . '/5',
+        '2. Facilidade de uso da plataforma: ' . ($ease_of_use ?: 'N/A') . '/5',
+        '3. Utilidade das orientações: ' . ($utility ?: 'N/A') . '/5',
+        '4. Confiança no CEJUSC: ' . ($trust ?: 'N/A') . '/5',
+        '5. Satisfação Geral: ' . ($satisfaction ?: 'N/A') . '/5',
         '',
         'Usuário: ' . $user_label,
         'Página: ' . ($page_url ?: 'Não informada'),
         '',
-        'Comentário (Bloco 4):',
+        'Comentários / Sugestões:',
         $comment ?: 'Sem comentário.',
         '',
         'Transcrição da conversa:',
