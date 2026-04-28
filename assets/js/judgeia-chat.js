@@ -294,10 +294,16 @@ function initSurvey() {
         surveyQuestions[id] = 0;
         const stars = q.querySelectorAll(".judgeia-stars button");
         stars.forEach(btn => {
-            btn.addEventListener("click", () => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
                 const val = parseInt(btn.dataset.val);
                 surveyQuestions[id] = val;
-                stars.forEach(b => b.classList.toggle("is-active", parseInt(b.dataset.val) <= val));
+                
+                // Remove 'is-active' de todos os botões desta questão e adiciona apenas ao clicado
+                stars.forEach(b => b.classList.remove("is-active"));
+                btn.classList.add("is-active");
+                
+                console.log(`Questão ${id} respondida com: ${val}`);
             });
         });
     });
