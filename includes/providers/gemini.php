@@ -170,6 +170,9 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         $model    = $settings['gemini_model'] ?? 'gemini-2.0-flash';
         $system_prompt = trim($geral['system_prompt'] ?? '');
 
+        $temperature = floatval($geral['temperature'] ?? 0.7);
+        $max_tokens  = intval($geral['max_tokens'] ?? 1024);
+
         if (!$api_key) return false;
 
         $contents = [];
@@ -191,11 +194,15 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         ];
 
         $body = [
-            "contents" => $contents
+            "contents" => $contents,
+            "generationConfig" => [
+                "temperature" => $temperature,
+                "maxOutputTokens" => $max_tokens,
+            ]
         ];
 
         if (!empty($system_prompt)) {
-            // Formato aceito pela API Gemini (REST): system_instruction (snake_case).
+            // Formato robusto: system_instruction com parts e role opcional.
             $body["system_instruction"] = [
                 "parts" => [["text" => $system_prompt]]
             ];
@@ -253,14 +260,21 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
                     $last_error = $result;
                 } else {
                     error_log(sprintf(
-                        'Judge IA (Gemini Payload): systemInstruction rejeitado para model=%s; repetindo sem system instruction.',
+                        'Judge IA (Gemini Payload): systemInstruction rejeitado para model=%s; repetindo anexando ao contexto.',
                         $current_model
                     ));
 
-                    $body = $body_without_system_instruction;
                     $has_system_instruction = false;
+                    $fallback_contents = $contents;
+                    if (!empty($system_prompt) && isset($fallback_contents[0]['parts'][0]['text'])) {
+                        // Prepend ao primeiro item da conversa para garantir que a instrução seja lida.
+                        $fallback_contents[0]['parts'][0]['text'] = "INSTRUÇÕES DO SISTEMA:\n" . $system_prompt . "\n\n---\n\n" . $fallback_contents[0]['parts'][0]['text'];
+                    }
 
-                    $retry_result = $this->request_generate_content($api_key, $current_model, $body);
+                    $fallback_body = $body_without_system_instruction;
+                    $fallback_body['contents'] = $fallback_contents;
+
+                    $retry_result = $this->request_generate_content($api_key, $current_model, $fallback_body);
                     if (!empty($retry_result['ok'])) {
                         return [
                             'content' => $retry_result['content'],

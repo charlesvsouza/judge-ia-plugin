@@ -4,7 +4,7 @@ Tags: ai, chatbot, artificial intelligence, gemini, openai, wordpress chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.13
+Stable tag: 2.1.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,12 @@ Sim. As conversas são salvas em tabela própria no banco de dados.
 Sim. Basta definir o limite como 0.
 
 == Changelog ==
+
+= 2.1.19 =
+* Correção de erro de indentação e corrupção no arquivo CSS (judgeia-chat.css).
+* Correção na inicialização da pesquisa de satisfação para garantir que os cliques nos índices de 1 a 5 funcionem corretamente.
+* Implementação do uso de Temperature e Max Tokens nas chamadas de API do Gemini e OpenAI.
+* Melhoria no fallback do System Prompt para Gemini: se o campo dedicado for rejeitado, as instruções são anexadas ao início do contexto para maior aderência.
 
 = 2.1.13 =
 * Aba Provedores passa a salvar via AJAX no admin para contornar bloqueios do servidor ao salvar chaves API pelo options.php.

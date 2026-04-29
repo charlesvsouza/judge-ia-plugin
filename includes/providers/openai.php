@@ -39,14 +39,19 @@ class JudgeIA_OpenAI implements JudgeIA_Provider_Interface {
             "content" => $message
         ];
 
+        $temperature = floatval($geral['temperature'] ?? 0.7);
+        $max_tokens  = intval($geral['max_tokens'] ?? 1024);
+
         $response = wp_remote_post("https://api.openai.com/v1/chat/completions", [
             'headers' => [
                 'Content-Type'  => 'application/json',
                 'Authorization' => 'Bearer ' . $api_key
             ],
             'body' => json_encode([
-                "model" => $model,
-                "messages" => $messages
+                "model"       => $model,
+                "messages"    => $messages,
+                "temperature" => $temperature,
+                "max_tokens"  => $max_tokens
             ]),
             'timeout' => 30
         ]);

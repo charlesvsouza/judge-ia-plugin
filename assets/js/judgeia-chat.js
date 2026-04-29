@@ -309,7 +309,8 @@ function initSurvey() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", initSurvey);
+initSurvey();
+
 
 if(surveySkipBtn){
     surveySkipBtn.addEventListener("click", function(){
