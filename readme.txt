@@ -4,7 +4,7 @@ Tags: ai, chatbot, artificial intelligence, gemini, openai, wordpress chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.19
+Stable tag: 2.1.20
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,10 @@ Sim. As conversas são salvas em tabela própria no banco de dados.
 Sim. Basta definir o limite como 0.
 
 == Changelog ==
+
+= 2.1.20 =
+* Ajuste na lógica de detecção de erro de payload do Gemini ("Unknown name system_instruction") para ser mais abrangente.
+* Garantia de que, uma vez detectado o erro de payload, o plugin migra permanentemente para o fallback de contexto em todas as tentativas subsequentes do mesmo request.
 
 = 2.1.19 =
 * Correção de erro de indentação e corrupção no arquivo CSS (judgeia-chat.css).

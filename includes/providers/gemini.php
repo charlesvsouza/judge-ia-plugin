@@ -130,14 +130,14 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
 
         $message = strtolower((string)($result['message'] ?? ''));
 
-        return (
-            strpos($message, 'unknown name "systeminstruction"') !== false
-            || strpos($message, "unknown name 'systeminstruction'") !== false
-            || strpos($message, 'unknown name "system_instruction"') !== false
-            || strpos($message, "unknown name 'system_instruction'") !== false
-            || (strpos($message, 'system_instruction') !== false && strpos($message, 'cannot find field') !== false)
-            || (strpos($message, 'systeminstruction') !== false && strpos($message, 'cannot find field') !== false)
-        );
+        // Se a mensagem contiver o nome do campo e indicar erro de campo desconhecido ou payload inválido.
+        $has_field = strpos($message, 'system_instruction') !== false || strpos($message, 'systeminstruction') !== false;
+        $is_error  = strpos($message, 'unknown name') !== false 
+                  || strpos($message, 'cannot find field') !== false 
+                  || strpos($message, 'invalid') !== false
+                  || strpos($message, 'field not found') !== false;
+
+        return $has_field && $is_error;
     }
 
     private function is_rate_limited_error($result) {
@@ -260,21 +260,23 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
                     $last_error = $result;
                 } else {
                     error_log(sprintf(
-                        'Judge IA (Gemini Payload): systemInstruction rejeitado para model=%s; repetindo anexando ao contexto.',
+                        'Judge IA (Gemini Payload): systemInstruction rejeitado para model=%s; migrando permanentemente para fallback no contexto.',
                         $current_model
                     ));
 
+                    // Desativa permanentemente para este request
                     $has_system_instruction = false;
-                    $fallback_contents = $contents;
-                    if (!empty($system_prompt) && isset($fallback_contents[0]['parts'][0]['text'])) {
+                    
+                    if (!empty($system_prompt) && isset($contents[0]['parts'][0]['text'])) {
                         // Prepend ao primeiro item da conversa para garantir que a instrução seja lida.
-                        $fallback_contents[0]['parts'][0]['text'] = "INSTRUÇÕES DO SISTEMA:\n" . $system_prompt . "\n\n---\n\n" . $fallback_contents[0]['parts'][0]['text'];
+                        $contents[0]['parts'][0]['text'] = "INSTRUÇÕES DO SISTEMA:\n" . $system_prompt . "\n\n---\n\n" . $contents[0]['parts'][0]['text'];
                     }
 
-                    $fallback_body = $body_without_system_instruction;
-                    $fallback_body['contents'] = $fallback_contents;
+                    // Atualiza o corpo principal para as próximas iterações do loop
+                    $body = $body_without_system_instruction;
+                    $body['contents'] = $contents;
 
-                    $retry_result = $this->request_generate_content($api_key, $current_model, $fallback_body);
+                    $retry_result = $this->request_generate_content($api_key, $current_model, $body);
                     if (!empty($retry_result['ok'])) {
                         return [
                             'content' => $retry_result['content'],
