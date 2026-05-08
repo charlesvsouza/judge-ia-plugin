@@ -170,21 +170,38 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
         $model    = $settings['gemini_model'] ?? 'gemini-2.0-flash';
         $system_prompt = trim($geral['system_prompt'] ?? '');
 
+        if ($system_prompt === '' && function_exists('judgeia_get_default_system_prompt')) {
+            $system_prompt = judgeia_get_default_system_prompt();
+        }
+
         $temperature = floatval($geral['temperature'] ?? 0.7);
         $max_tokens  = intval($geral['max_tokens'] ?? 1024);
 
-        if (!$api_key) return false;
+        if (!$api_key) {
+            return [
+                'error' => 'Gemini não configurada: informe a chave da API em Provedores.',
+                'provider' => 'gemini',
+                'error_kind' => 'config',
+            ];
+        }
 
         $contents = [];
 
         foreach ($history as $item) {
+            $question = isset($item['question']) ? trim((string)$item['question']) : '';
+            $answer   = isset($item['answer']) ? trim((string)$item['answer']) : '';
+
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+
             $contents[] = [
                 "role" => "user",
-                "parts" => [["text" => $item['question']]]
+                "parts" => [["text" => $question]]
             ];
             $contents[] = [
                 "role" => "model",
-                "parts" => [["text" => $item['answer']]]
+                "parts" => [["text" => $answer]]
             ];
         }
 
@@ -292,12 +309,20 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
 
             if (($result['kind'] ?? '') === 'network') {
                 error_log('Judge IA (Gemini WP Error): ' . ($result['message'] ?? 'Erro de rede.'));
-                return ['error' => 'Falha de conexão com a API do Gemini.'];
+                return [
+                    'error' => 'Falha de conexão com a API do Gemini.',
+                    'provider' => 'gemini',
+                    'error_kind' => 'network',
+                ];
             }
 
             if (($result['kind'] ?? '') === 'format') {
                 error_log('Judge IA (Gemini Unexpected Response): ' . ($result['raw_body'] ?? ''));
-                return ['error' => 'A resposta da API do Gemini não possui o formato esperado.'];
+                return [
+                    'error' => 'A resposta da API do Gemini não possui o formato esperado.',
+                    'provider' => 'gemini',
+                    'error_kind' => 'format',
+                ];
             }
 
             if ($this->is_model_unavailable_error($result)) {
@@ -333,19 +358,25 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
 
         if ($this->is_access_denied_error($last_error)) {
             return [
-                'error' => 'Gemini bloqueou o projeto/chave atual (acesso negado). Verifique faturamento, região e permissões da chave no Google AI Studio/Cloud ou troque para OpenAI em Provedores.'
+                'error' => 'Gemini bloqueou o projeto/chave atual (acesso negado). Verifique faturamento, região e permissões da chave no Google AI Studio/Cloud ou troque para OpenAI em Provedores.',
+                'provider' => 'gemini',
+                'error_kind' => 'access_denied',
             ];
         }
 
         if ($this->is_model_unavailable_error($last_error)) {
             return [
-                'error' => 'O modelo Gemini configurado não está disponível para sua chave/projeto nesta versão da API. Atualize o modelo em Provedores (ex.: gemini-2.0-flash) ou use OpenAI.'
+                'error' => 'O modelo Gemini configurado não está disponível para sua chave/projeto nesta versão da API. Atualize o modelo em Provedores (ex.: gemini-2.0-flash) ou use OpenAI.',
+                'provider' => 'gemini',
+                'error_kind' => 'model_unavailable',
             ];
         }
 
         if ($this->is_rate_limited_error($last_error)) {
             return [
-                'error' => 'gemini_rate_limited: A cota da API do Gemini foi esgotada (limite de requisições atingido). Aguarde alguns minutos e tente novamente, ou configure o provedor OpenAI como alternativa.'
+                'error' => 'gemini_rate_limited: A cota da API do Gemini foi esgotada (limite de requisições atingido). Aguarde alguns minutos e tente novamente, ou configure o provedor OpenAI como alternativa.',
+                'provider' => 'gemini',
+                'error_kind' => 'rate_limit',
             ];
         }
 
@@ -357,7 +388,11 @@ class JudgeIA_Gemini implements JudgeIA_Provider_Interface {
             error_log('Judge IA (Gemini API Error): ' . wp_json_encode($last_error['raw']));
         }
 
-        return ['error' => 'Erro da API (Gemini): ' . $error_message];
+        return [
+            'error' => 'Erro da API (Gemini): ' . $error_message,
+            'provider' => 'gemini',
+            'error_kind' => 'api',
+        ];
     }
 }
 

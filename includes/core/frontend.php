@@ -19,7 +19,10 @@ function judgeia_enqueue_assets() {
     );
 
     $geral = get_option('judgeia_settings_geral');
-    $welcome = $geral['welcome_message'] ?? '';
+    $welcome = trim((string)($geral['welcome_message'] ?? ''));
+    if ($welcome === '' && function_exists('judgeia_get_default_welcome_message')) {
+        $welcome = judgeia_get_default_welcome_message();
+    }
 
     wp_localize_script('judgeia-script', 'judgeia_ajax', [
         'ajax_url' => admin_url('admin-ajax.php'),

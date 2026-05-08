@@ -31,6 +31,14 @@ function judgeia_sanitize_geral($input) {
         ? max(0, intval($input['daily_limit']))
         : ($defaults['daily_limit'] ?? 20);
 
+    $output['daily_token_limit'] = isset($input['daily_token_limit'])
+        ? max(0, intval($input['daily_token_limit']))
+        : ($defaults['daily_token_limit'] ?? 0);
+
+    $output['welcome_message'] = isset($input['welcome_message'])
+        ? sanitize_textarea_field($input['welcome_message'])
+        : ($defaults['welcome_message'] ?? '');
+
     $output['feedback_email'] = isset($input['feedback_email'])
         ? sanitize_email($input['feedback_email'])
         : ($defaults['feedback_email'] ?? '');

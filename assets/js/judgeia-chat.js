@@ -185,17 +185,37 @@ function sendMessage(){
     input.style.height = 'auto';
     loader.classList.remove("judgeia-hidden");
 
-    if(typeof judgeia_ajax === "undefined") return;
+    if(typeof judgeia_ajax === "undefined"){
+        loader.classList.add("judgeia-hidden");
+        appendError("Configuração do chat indisponível no momento.");
+        saveHistory();
+        return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 45000);
 
     fetch(judgeia_ajax.ajax_url,{
         method:"POST",
         headers:{ "Content-Type":"application/x-www-form-urlencoded"},
-        body:"action=judgeia_send_message&nonce="+judgeia_ajax.nonce+"&message="+encodeURIComponent(message)
+        body:"action=judgeia_send_message&nonce="+judgeia_ajax.nonce+"&message="+encodeURIComponent(message),
+        signal: controller.signal
     })
-    .then(r=>r.json())
-    .then(data=>{
-        loader.classList.add("judgeia-hidden");
+    .then((response) => response.text())
+    .then((rawText) => {
+        let data = null;
+
+        try {
+            data = JSON.parse(rawText);
+        } catch (_error) {
+            loader.classList.add("judgeia-hidden");
+            appendError("Resposta inválida do servidor. Verifique os logs do WordPress e tente novamente.");
+            saveHistory();
+            return;
+        }
+
         if(data.success){
+            loader.classList.add("judgeia-hidden");
             appendAI(data.data.response);
             surveyPending = true;
             surveyDismissed = false;
@@ -203,14 +223,24 @@ function sendMessage(){
             return;
         }
 
+        loader.classList.add("judgeia-hidden");
         const errorMessage = data?.data?.message || "Nao foi possivel obter resposta agora.";
         appendError(errorMessage);
         saveHistory();
     })
-    .catch(()=>{
+    .catch((error)=>{
         loader.classList.add("judgeia-hidden");
+        if(error && error.name === "AbortError"){
+            appendError("A solicitacao excedeu o tempo limite. Tente novamente em instantes.");
+            saveHistory();
+            return;
+        }
+
         appendError("Falha de conexao. Tente novamente em instantes.");
         saveHistory();
+    })
+    .finally(() => {
+        window.clearTimeout(timeoutId);
     });
 }
 
@@ -225,9 +255,12 @@ function appendUser(text){
 
 function appendAI(text){
 
+    const safeText = typeof text === "string" ? text.trim() : "";
+    const aiText = safeText !== "" ? safeText : "Não consegui gerar uma resposta válida agora. Tente novamente em instantes.";
+
     const div = document.createElement("div");
     div.className = "judgeia-message judgeia-ai";
-    div.innerHTML = formatResponse(text);
+    div.innerHTML = formatResponse(aiText);
 
     const speakBtn = document.createElement("button");
     speakBtn.className = "judgeia-audio-btn";
@@ -238,7 +271,7 @@ function appendAI(text){
         if(speechSynthesis.speaking){
             stopSpeech();
         } else {
-            speak(text, speakBtn);
+            speak(aiText, speakBtn);
         }
     });
 

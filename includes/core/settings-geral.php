@@ -8,7 +8,8 @@ function judgeia_register_settings_geral() {
 
     register_setting(
         'judgeia_settings_group_geral',
-        'judgeia_settings_geral'
+        'judgeia_settings_geral',
+        'judgeia_sanitize_geral'
     );
 }
 
@@ -58,11 +59,36 @@ function judgeia_render_tab_geral() {
                 <th scope="row">Limite de Requisições por Dia</th>
                 <td>
                     <input type="number"
-                           min="1"
+                           min="0"
                            name="judgeia_settings_geral[daily_limit]"
                            value="<?php echo esc_attr($options['daily_limit'] ?? 20); ?>">
                     <p class="description">
-                        Aplica-se a usuários logados e visitantes.
+                        0 = ilimitado. Aplica-se a usuários logados e visitantes.
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">Limite Diário de Tokens</th>
+                <td>
+                    <input type="number"
+                           min="0"
+                           name="judgeia_settings_geral[daily_token_limit]"
+                           value="<?php echo esc_attr($options['daily_token_limit'] ?? 0); ?>">
+                    <p class="description">
+                        0 = ilimitado. Este limite soma os tokens de respostas geradas no dia.
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">Mensagem de Boas-vindas</th>
+                <td>
+                    <textarea name="judgeia_settings_geral[welcome_message]"
+                              rows="3"
+                              cols="60"><?php echo esc_textarea($options['welcome_message'] ?? ''); ?></textarea>
+                    <p class="description">
+                        Mensagem exibida ao abrir o chat pela primeira vez.
                     </p>
                 </td>
             </tr>
