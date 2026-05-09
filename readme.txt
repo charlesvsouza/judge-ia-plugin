@@ -4,7 +4,7 @@ Tags: ai, chatbot, artificial intelligence, gemini, openai, wordpress chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.20
+Stable tag: 2.1.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,13 @@ Sim. Basta definir o limite como 0.
 
 == Changelog ==
 
+= 2.1.21 =
+* Pré-configuração padrão jurídica para atendimento em ambas as APIs (OpenAI e Gemini), com foco em acolhimento e orientação clara.
+* Mensagem padrão de boas-vindas no banco com convite inicial: "Em que posso ajudar hoje?".
+* Persistência e sanitização de novos campos gerais (boas-vindas e limite diário de tokens).
+* Fallback robusto e bidirecional entre provedores para evitar indisponibilidade do chat.
+* Correções no pacote dist para manter o auto-updater funcional.
+
 = 2.1.20 =
 * Ajuste na lógica de detecção de erro de payload do Gemini ("Unknown name system_instruction") para ser mais abrangente.
 * Garantia de que, uma vez detectado o erro de payload, o plugin migra permanentemente para o fallback de contexto em todas as tentativas subsequentes do mesmo request.
@@ -192,6 +199,9 @@ Sim. Basta definir o limite como 0.
 * Indicador de status da API
 
 == Upgrade Notice ==
+
+= 2.1.21 =
+Recomendado: adiciona defaults jurídicos de atendimento, melhora a resiliência entre APIs e reforça a atualização automática do plugin.
 
 = 2.1.13 =
 Contorna erro 500 persistente ao salvar chave do Gemini em ambientes que bloqueiam o POST padrao do options.php.

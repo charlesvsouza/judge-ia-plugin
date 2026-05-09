@@ -4,7 +4,7 @@
  * Plugin URI: https://seudominio.com/judge-ia
  * Update URI: https://github.com/charlesvsouza/judge-ia-plugin/
  * Description: Assistente de Inteligência Artificial para WordPress com suporte a Gemini e OpenAI, controle de limite diário e interface moderna.
- * Version: 2.1.20
+ * Version: 2.1.21
  * Author: Charles Vasconcelos de Souza
  * Author URI: https://seudominio.com
  * Text Domain: judge-ia-plugin
@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) exit;
 |--------------------------------------------------------------------------
 */
 
-define('JUDGEIA_PLUGIN_VERSION', '2.1.20');
+define('JUDGEIA_PLUGIN_VERSION', '2.1.21');
 define('JUDGEIA_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('JUDGEIA_PLUGIN_URL', plugin_dir_url(__FILE__));
 
