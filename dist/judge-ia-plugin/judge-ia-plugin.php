@@ -2,8 +2,9 @@
 /**
  * Plugin Name: Judge IA Plugin
  * Plugin URI: https://seudominio.com/judge-ia
+ * Update URI: https://github.com/charlesvsouza/judge-ia-plugin/
  * Description: Assistente de Inteligência Artificial para WordPress com suporte a Gemini e OpenAI, controle de limite diário e interface moderna.
- * Version: 2.1.4
+ * Version: 2.1.20
  * Author: Charles Vasconcelos de Souza
  * Author URI: https://seudominio.com
  * Text Domain: judge-ia-plugin
@@ -23,9 +24,38 @@ if (!defined('ABSPATH')) exit;
 |--------------------------------------------------------------------------
 */
 
-define('JUDGEIA_PLUGIN_VERSION', '2.1.4');
+define('JUDGEIA_PLUGIN_VERSION', '2.1.20');
 define('JUDGEIA_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('JUDGEIA_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+// Optional token for private repositories.
+if (!defined('JUDGEIA_GITHUB_TOKEN')) {
+    define('JUDGEIA_GITHUB_TOKEN', '');
+}
+
+// Set true in wp-config.php only if your repository is private and needs auth.
+if (!defined('JUDGEIA_GITHUB_REPO_PRIVATE')) {
+    define('JUDGEIA_GITHUB_REPO_PRIVATE', false);
+}
+
+function judgeia_is_placeholder_github_token($token) {
+    $token = strtolower(trim((string)$token));
+
+    if ($token === '') {
+        return true;
+    }
+
+    $placeholders = [
+        'your_github_token_here',
+        'seu_token_aqui',
+        'token_aqui',
+        'github_token',
+        'ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'github_pat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    ];
+
+    return in_array($token, $placeholders, true);
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +67,47 @@ function judgeia_safe_require($file) {
     $path = JUDGEIA_PLUGIN_PATH . $file;
     if (file_exists($path)) {
         require_once $path;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| AUTO UPDATER (GitHub)
+|--------------------------------------------------------------------------
+*/
+
+$puc_path = JUDGEIA_PLUGIN_PATH . 'includes/plugin-update-checker/plugin-update-checker.php';
+if (file_exists($puc_path)) {
+    require_once $puc_path;
+}
+
+if (class_exists('YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory')) {
+    $myUpdateChecker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+        'https://github.com/charlesvsouza/judge-ia-plugin/',
+        __FILE__,
+        'judge-ia-plugin'
+    );
+
+    // Keep updates tied to the production branch.
+    $myUpdateChecker->setBranch('main');
+
+    // In this project, version bumps are published on main first.
+    $myUpdateChecker->addFilter('vcs_update_detection_strategies', function ($strategies) {
+        if (isset($strategies['branch'])) {
+            return ['branch' => $strategies['branch']];
+        }
+
+        return $strategies;
+    });
+
+    // Avoid sending invalid auth on public repositories, which can trigger "Unauthorized".
+    if (
+        defined('JUDGEIA_GITHUB_REPO_PRIVATE')
+        && JUDGEIA_GITHUB_REPO_PRIVATE
+        && defined('JUDGEIA_GITHUB_TOKEN')
+        && !judgeia_is_placeholder_github_token(JUDGEIA_GITHUB_TOKEN)
+    ) {
+        $myUpdateChecker->setAuthentication(JUDGEIA_GITHUB_TOKEN);
     }
 }
 

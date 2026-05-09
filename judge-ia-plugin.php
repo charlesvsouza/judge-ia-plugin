@@ -2,6 +2,7 @@
 /**
  * Plugin Name: Judge IA Plugin
  * Plugin URI: https://seudominio.com/judge-ia
+ * Update URI: https://github.com/charlesvsouza/judge-ia-plugin/
  * Description: Assistente de Inteligência Artificial para WordPress com suporte a Gemini e OpenAI, controle de limite diário e interface moderna.
  * Version: 2.1.20
  * Author: Charles Vasconcelos de Souza
