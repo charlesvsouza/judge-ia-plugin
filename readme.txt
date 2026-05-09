@@ -4,7 +4,7 @@ Tags: ai, chatbot, artificial intelligence, gemini, openai, wordpress chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.21
+Stable tag: 2.1.22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,10 @@ Sim. Basta definir o limite como 0.
 
 == Changelog ==
 
+= 2.1.22 =
+* Hardening do auto-updater com logs detalhados de erro/sucesso do Plugin Update Checker e do processo de upgrade no WordPress.
+* Melhoria de diagnóstico para identificar causa raiz de falhas de atualização no log do servidor.
+
 = 2.1.21 =
 * Pré-configuração padrão jurídica para atendimento em ambas as APIs (OpenAI e Gemini), com foco em acolhimento e orientação clara.
 * Mensagem padrão de boas-vindas no banco com convite inicial: "Em que posso ajudar hoje?".
@@ -199,6 +203,9 @@ Sim. Basta definir o limite como 0.
 * Indicador de status da API
 
 == Upgrade Notice ==
+
+= 2.1.22 =
+Recomendado: melhora o diagnóstico e a confiabilidade do processo de atualização automática.
 
 = 2.1.21 =
 Recomendado: adiciona defaults jurídicos de atendimento, melhora a resiliência entre APIs e reforça a atualização automática do plugin.

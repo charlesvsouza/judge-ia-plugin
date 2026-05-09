@@ -4,7 +4,7 @@
  * Plugin URI: https://seudominio.com/judge-ia
  * Update URI: https://github.com/charlesvsouza/judge-ia-plugin/
  * Description: Assistente de Inteligência Artificial para WordPress com suporte a Gemini e OpenAI, controle de limite diário e interface moderna.
- * Version: 2.1.21
+ * Version: 2.1.22
  * Author: Charles Vasconcelos de Souza
  * Author URI: https://seudominio.com
  * Text Domain: judge-ia-plugin
@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) exit;
 |--------------------------------------------------------------------------
 */
 
-define('JUDGEIA_PLUGIN_VERSION', '2.1.21');
+define('JUDGEIA_PLUGIN_VERSION', '2.1.22');
 define('JUDGEIA_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('JUDGEIA_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -109,7 +109,74 @@ if (class_exists('YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory')) {
     ) {
         $myUpdateChecker->setAuthentication(JUDGEIA_GITHUB_TOKEN);
     }
+
+    // Loga erros de API do PUC para diagnosticar falhas de update no servidor.
+    add_action('puc_api_error', function ($error, $http_response = null, $url = '', $slug = '') {
+        if ((string)$slug !== 'judge-ia-plugin') {
+            return;
+        }
+
+        $message = 'Erro desconhecido.';
+        $code = '';
+
+        if (is_wp_error($error)) {
+            $code = $error->get_error_code();
+            $message = $error->get_error_message();
+        } elseif (is_scalar($error)) {
+            $message = (string)$error;
+        }
+
+        $http_code = '';
+        if (is_array($http_response)) {
+            $http_code = (string)wp_remote_retrieve_response_code($http_response);
+        }
+
+        error_log(sprintf(
+            'Judge IA (Updater PUC Error): slug=%s code=%s http=%s url=%s message=%s',
+            (string)$slug,
+            $code,
+            $http_code,
+            (string)$url,
+            $message
+        ));
+    }, 10, 4);
 }
+
+// Loga resultado do upgrade no WordPress para facilitar analise de falhas.
+add_action('upgrader_process_complete', function ($upgrader, $hook_extra) {
+    if (!is_array($hook_extra)) {
+        return;
+    }
+
+    $is_plugin_upgrade = (($hook_extra['action'] ?? '') === 'update')
+        && (($hook_extra['type'] ?? '') === 'plugin');
+
+    if (!$is_plugin_upgrade) {
+        return;
+    }
+
+    $plugins = $hook_extra['plugins'] ?? [];
+    if (!is_array($plugins) || !in_array(plugin_basename(__FILE__), $plugins, true)) {
+        return;
+    }
+
+    $result = null;
+    if (is_object($upgrader) && isset($upgrader->result)) {
+        $result = $upgrader->result;
+    }
+
+    if (is_wp_error($result)) {
+        error_log('Judge IA (Updater Upgrade Error): ' . $result->get_error_code() . ' - ' . $result->get_error_message());
+        return;
+    }
+
+    $destination = '';
+    if (is_array($result)) {
+        $destination = (string)($result['destination'] ?? '');
+    }
+
+    error_log('Judge IA (Updater Upgrade Success): destination=' . $destination);
+}, 10, 2);
 
 /*
 |--------------------------------------------------------------------------
